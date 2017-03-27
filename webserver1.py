@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import socket
 import sys
 if sys.version_info[0] >= 3:
@@ -37,19 +39,20 @@ Content-type:text/html
 <body>
 <p>Hello Omega. I'm a Web Server!</p>
 <h1 align=center><font color=\"red\">Welcome</font></h1>
-<font color=\"red\">RED LED  </font>
+<font color=\"red\">RED LED  </font> 
     <button onclick=\"location.href='/RH'\">HIGH</button>
     <button onclick=\"location.href='/RL'\">LOW</button><br>
-<font color=\"green\">GREEN LED</font>
+<font color=\"green\">GREEN LED</font> 
     <button onclick=\"location.href='/GH'\">HIGH</button>
     <button onclick=\"location.href='/GL'\">LOW</button><br>
-<font color=\"blue\">BLUE LED </font>
+<font color=\"blue\">BLUE LED </font> 
     <button onclick=\"location.href='/BH'\">HIGH</button>
     <button onclick=\"location.href='/BL'\">LOW</button><br>
 Press to Quit <button onclick=\"location.href='/Q'\">QUIT</button>
 <br>
 
 </body>
+
 """
 #----------------------------------------------------------------------------
 
@@ -92,6 +95,30 @@ except IOError:
     print("Can't find  html file {0}".format(html_file))
     quit()
 
+# There ought to be a nicer way to get the ssid than by searching /etc/config/wireless
+wireless_file = "/etc/config/wireless"
+ssid = ""
+try:
+    mywi = open(wireless_file, 'r')
+    mywireless = mywi.read()
+    Omega_str = "Omega-"
+    idx = mywireless.find(Omega_str)
+    if idx == -1:
+        print("Couldn't find the string Omega-xxxx in /etc/config/wireless")
+	print("Modify the code to find your own ssid")
+	quit()
+    idx += len(Omega_str)
+    ssid = mywireless[idx:idx+4]
+    #print("ssid is {0}".format(ssid))
+
+except IOError:
+    print("Can't open file {0}".format(wireless_file))
+    quit()
+
+if ssid == "":
+    print("No ssid")
+    quit()
+
 mypage = myhtml.read()
 myhtml.close()
 
@@ -102,6 +129,7 @@ listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 listen_socket.bind((HOST, PORT))
 listen_socket.listen(1)
 print("Serving HTTP on port {0} ...".format(PORT))
+print("Open url http://omega-{0}.local:8888/hello in your browser".format(ssid))
 cnt = 0
 while True:
     client_connection, client_address = listen_socket.accept()
@@ -127,24 +155,23 @@ while True:
         digitalWrite(BLUE_LED, LOW)                # GET /BL turns the LED off
 
     if (cnt > 0) and request[4:6] =="/Q":
-        # note we are running python2 (use input in python3)
-        # but it appears the print statements are OK
+	# note we are running python2 (use input in python3)
+	# but it appears the print statements are OK
         ans = raw_input("close client (y/n)")
         #ans = input("close client (y/n)")
         if ans[0] == 'y':
             # close the connection:
             client_connection.shutdown(socket.SHUT_RDWR)
-            client_connection.close()
+	    client_connection.close()
             print("client disconnected")
             clear_leds()
             break
     cnt += 1
 
-# Mysteriously getting 3 responses including often the past one from the previous run. 
+# Mysteriously getting 3 responses including often the past one from the previous run.   
 
     http_response = mypage
 
     client_connection.sendall(http_response)
     #client_connection.sendall(http_response.encode('utf-8')) for Python 3
     client_connection.close()
-webserver1.py" 150L, 4691C
